@@ -149,3 +149,4 @@ echo "Bundle found in '$bundle_file'"
 wrapper_policy=$(prepare_wrapper_policy "$BUNDLE" "$bundle_file" "$bundle_args")
 echo "Running cf-agent..."
 run_policy "$verbose" "$wrapper_policy"
+echo "Exit status was $?"
