@@ -26,10 +26,13 @@
 ################################################################################
 
 readonly CFENGINE_MASTERFILES_DIR=/var/cfengine/inputs
+# relative to CFENGINE_MASTERFILES_DIR
 readonly LIBRARY_FILES=(def.cf lib/3.6/common.cf sanger/global_functions.cf)
 
 function usage() {
-    echo "Usage: $0 [-v] <bundle to run> <bundle arguments>" >&2
+    echo "Run a CFEngine bundle with arguments" >&2
+    echo >&2
+    echo "Usage: $0 [-v] <bundle to run> [arg 1] [arg 2] ..." >&2
     echo "(-v runs cf-agent with --verbose)" >&2
 }
 
