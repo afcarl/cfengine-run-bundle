@@ -32,13 +32,14 @@ readonly LIBRARY_FILES=(def.cf lib/3.6/common.cf sanger/global_functions.cf)
 function usage() {
     echo "Run a CFEngine bundle with arguments" >&2
     echo >&2
-    echo "Usage: $0 [-v] <bundle to run> [arg 1] [arg 2] ..." >&2
-    echo "(-v runs cf-agent with --verbose)" >&2
+    echo "Usage: $0 [-v] [-f bundle.cf] <bundle to run> [arg 1] [arg 2] ..." >&2
+    echo >&2
+    echo "-v: run cf-agent with --verbose)" >&2
+    echo >&2
+    echo "-f bundle.cf: use bundle.cf for source of bundle" >&2
+    echo -n "If not specified, " >&2
+    echo "look for the bundle in '$CFENGINE_MASTERFILES_DIR'" >&2
 }
-
-# CFEngine requires policy directory not be world-writeable
-wrapper_pol_dir=$(mktemp --directory)
-chmod 600 "$wrapper_pol_dir"
 
 function clean_up() {
     # since we're running as root, we're going to be rather careful
@@ -56,14 +57,11 @@ function clean_up() {
 trap clean_up exit
 
 function find_bundle_file() {
+    local bundle=$1
     bundle_file=$(grep -E -R -l \
-        "bundle agent $BUNDLE\$|bundle agent $BUNDLE\(" \
+        "bundle agent $bundle\$|bundle agent $bundle\(" \
         "$CFENGINE_MASTERFILES_DIR"
     )
-    if [[ $bundle_file == "" ]]; then
-        echo "Error: unable to find file containing bundle '$BUNDLE'" >&2
-        exit 1
-    fi
     echo "$bundle_file"
 }
 
@@ -106,6 +104,8 @@ function prepare_wrapper_policy() {
 function run_policy() {
     local verbose=$1
     local policy=$2
+    local wrapper_pol_dir=$3
+
     cat > "$wrapper_pol_dir/test.cf" <<< "$policy"
 
     if $verbose; then
@@ -115,38 +115,62 @@ function run_policy() {
     fi
 }
 
-if [[ $USER != root ]]; then
-    echo "Error: must be run as root" >&2
-    exit 1
-fi
-
+bundle_file=
+bundle_args=''
 verbose=false
-if [[ $1 == "-v" ]]; then
-    verbose=true
-    shift
-fi
+while (( $# > 0 )); do
+    case $1 in
+        -h|--help)
+            usage
+            exit 1
+            ;;
+        -f|--file)
+            bundle_file=$PWD/$2
+            shift 2
+            ;;
+        -v|--verbose)
+            verbose=true
+            shift
+            ;;
+        *)
+            if [[ $bundle == "" ]]; then
+                bundle=$1
+            elif [[ $bundle_args == "" ]]; then
+                bundle_args="\"$1\""
+            else
+                bundle_args="$bundle_args, \"$1\""
+            fi
+            shift
+            ;;
+    esac
+done
 
-readonly BUNDLE=$1
-if [[ $BUNDLE == "" ]]; then
+if [[ $bundle == "" ]]; then
     echo "Error: no bundle specified" >&2
     usage
     exit 1
 fi
 shift
 
-bundle_args=''
-while [[ $1 != "" ]]; do
-    if [[ $bundle_args == "" ]]; then
-        bundle_args="\"$1\""
-    else
-        bundle_args="$bundle_args, \"$1\""
-    fi
-    shift
-done
+if [[ $USER != root ]]; then
+    echo "Error: must be run as root" >&2
+    exit 1
+fi
 
-bundle_file=$(find_bundle_file "$BUNDLE")
-echo "Bundle found in '$bundle_file'"
-wrapper_policy=$(prepare_wrapper_policy "$BUNDLE" "$bundle_file" "$bundle_args")
+if [[ $bundle_file == "" ]]; then
+    bundle_file=$(find_bundle_file "$bundle")
+    if [[ $bundle_file == "" ]]; then
+            echo "Error: unable to find file containing bundle '$bundle'" >&2
+            exit 1
+    fi
+    echo "Bundle found in '$bundle_file'"
+fi
+
+wrapper_policy=$(prepare_wrapper_policy "$bundle" "$bundle_file" "$bundle_args")
+
 echo "Running cf-agent..."
-run_policy "$verbose" "$wrapper_policy"
+# CFEngine requires policy directory not be world-writeable
+wrapper_pol_dir=$(mktemp --directory)
+chmod 600 "$wrapper_pol_dir"
+run_policy "$verbose" "$wrapper_policy" "$wrapper_pol_dir"
 echo "Exit status was $?"
