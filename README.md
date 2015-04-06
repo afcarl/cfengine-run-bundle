@@ -13,9 +13,12 @@ prototyping, inspired by [`cf-cmd`](http://blog.cf-learn.info/cf-cmd-a-command-l
 * Run with:
 * 
   ```
-  $ ./sudo run_bundle.sh [-v] <bundle to run> [arg 1] [arg 2] ..."
+  $ ./sudo run_bundle.sh [-v] [-f bundle.cf] <bundle to run> [arg 1] [arg 2] ..."
   ```
-  
-  (-v runs `cf-agent` with `--verbose`.)
-* `run_bundle.sh` will figure out which file the bundle is in, create a wrapper
-  policy to run the bundle, and run it with `cf-agent`.
+
+  -v: run cf-agent with --verbose
+
+  -f bundle.cf: use bundle.cf for source of bundle
+  If not specified, look for the bundle in '/var/cfengine/inputs'
+* `run_bundle.sh` will create a wrapper policy to run the bundle, and run it
+  with `cf-agent`.
