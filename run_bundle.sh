@@ -34,7 +34,7 @@ function usage() {
     echo >&2
     echo "Usage: $0 [-v] [-f bundle.cf] <bundle to run> [arg 1] [arg 2] ..." >&2
     echo >&2
-    echo "-v: run cf-agent with --verbose)" >&2
+    echo "-v: run cf-agent with --verbose" >&2
     echo >&2
     echo "-f bundle.cf: use bundle.cf for source of bundle" >&2
     echo -n "If not specified, " >&2
