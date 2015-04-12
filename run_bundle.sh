@@ -125,7 +125,12 @@ while (( $# > 0 )); do
             exit 1
             ;;
         -f|--file)
-            bundle_file=$PWD/$2
+            bundle_file=$2
+            # CFEngine takes non-absolute paths as relative to
+            # /var/lib/cfengine3/inputs
+            if ! grep -q '^/' <<< "$bundle_file"; then
+                bundle_file="$(pwd)/$bundle_file"
+            fi
             shift 2
             ;;
         -v|--verbose)
