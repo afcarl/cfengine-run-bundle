@@ -32,12 +32,13 @@ readonly LIBRARY_FILES=(def.cf lib/3.6/common.cf sanger/global_functions.cf)
 function usage() {
     echo "Run a CFEngine bundle with arguments" >&2
     echo >&2
-    echo "Usage: $0 [-v] [-f bundle.cf] <bundle to run> [arg 1] [arg 2] ..." >&2
+    echo "Usage: $0 [options] <bundle to run> [arg 1] [arg 2] ..." >&2
     echo >&2
+    echo "Options:" >&2
     echo "-v: run cf-agent with --verbose" >&2
-    echo >&2
+    echo "-s: pass arguments as an slist rather than individually" >&2
     echo "-f bundle.cf: use bundle.cf for source of bundle" >&2
-    echo -n "If not specified, " >&2
+    echo -n "If -f not specified, " >&2
     echo "look for the bundle in '$CFENGINE_MASTERFILES_DIR'" >&2
 }
 
@@ -82,6 +83,14 @@ function prepare_wrapper_policy() {
         fi
     done
 
+    if $slist_args; then
+        args_slist="{ $bundle_args }"
+        args_param="@(test.args_slist)"
+    else
+        args_slist="{ }";
+        args_param="$bundle_args"
+    fi
+
     wrapper="body common control {
         inputs => {
             $library_inputs
@@ -92,9 +101,12 @@ function prepare_wrapper_policy() {
 
     bundle agent test
     {
+        vars:
+            any::
+                \"args_slist\" slist => $args_slist;
         methods:
             any::
-                \"test\" usebundle => $bundle($bundle_args);
+                \"test\" usebundle => $bundle($args_param);
     }
     "
 
@@ -118,6 +130,7 @@ function run_policy() {
 bundle_file=
 bundle_args=''
 verbose=false
+slist_args=false
 while (( $# > 0 )); do
     case $1 in
         -h|--help)
@@ -135,6 +148,10 @@ while (( $# > 0 )); do
             ;;
         -v|--verbose)
             verbose=true
+            shift
+            ;;
+        -s)
+            slist_args=true
             shift
             ;;
         *)
