@@ -60,7 +60,7 @@ trap clean_up exit
 function find_bundle_file() {
     local bundle=$1
     bundle_file=$(grep -E -R -l \
-        "bundle agent $bundle\$|bundle agent $bundle\(" \
+        "bundle agent $bundle\$|bundle agent $bundle\(|bundle agent $bundle {" \
         "$CFENGINE_MASTERFILES_DIR"
     )
     echo "$bundle_file"
