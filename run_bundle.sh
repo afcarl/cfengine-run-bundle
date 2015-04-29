@@ -40,6 +40,8 @@ function usage() {
     echo "-f bundle.cf: use bundle.cf for source of bundle" >&2
     echo -n "If -f not specified, " >&2
     echo "look for the bundle in '$CFENGINE_MASTERFILES_DIR'" >&2
+    echo "-D classes: define 'classes' (comma-separated) at the start of" >&2
+    echo "the cf-agent run" >&2
 }
 
 function clean_up() {
@@ -115,15 +117,16 @@ function prepare_wrapper_policy() {
 
 function run_policy() {
     local verbose=$1
-    local policy=$2
-    local wrapper_pol_dir=$3
+    local additional_classes=$2
+    local policy=$3
+    local wrapper_pol_dir=$4
 
     cat > "$wrapper_pol_dir/test.cf" <<< "$policy"
 
     if $verbose; then
-        cf-agent -Kvf "$wrapper_pol_dir/test.cf"
+        cf-agent -D "$additional_classes" -Kvf "$wrapper_pol_dir/test.cf"
     else
-        cf-agent -Kf "$wrapper_pol_dir/test.cf"
+        cf-agent -D "$additional_classes" -Kf "$wrapper_pol_dir/test.cf"
     fi
 }
 
@@ -131,6 +134,7 @@ bundle_file=
 bundle_args=''
 verbose=false
 slist_args=false
+additional_classes=""
 while (( $# > 0 )); do
     case $1 in
         -h|--help)
@@ -153,6 +157,10 @@ while (( $# > 0 )); do
         -s)
             slist_args=true
             shift
+            ;;
+        -D)
+            additional_classes=$2
+            shift 2
             ;;
         *)
             if [[ $bundle == "" ]]; then
@@ -194,5 +202,5 @@ echo "Running cf-agent..."
 # CFEngine requires policy directory not be world-writeable
 wrapper_pol_dir=$(mktemp --directory)
 chmod 600 "$wrapper_pol_dir"
-run_policy "$verbose" "$wrapper_policy" "$wrapper_pol_dir"
+run_policy "$verbose" "$additional_classes" "$wrapper_policy" "$wrapper_pol_dir"
 echo "Exit status was $?"
