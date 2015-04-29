@@ -19,6 +19,7 @@ prototyping, inspired by [`cf-cmd`](http://blog.cf-learn.info/cf-cmd-a-command-l
   * `-v`: run `cf-agent` with `--verbose`
   * `-s`: pass arguments as an slist rather than individually
   * `-f bundle.cf`: use `bundle.cf` for source of bundle
+  * `-D classes`: define 'classes' (comma-separated) at the start of the `cf-agent` run
   
     If `-f` not specified, look for the bundle in `CFENGINE_MASTERFILES_DIR`
 * `run_bundle.sh` will create a wrapper policy to run the bundle, and run it
